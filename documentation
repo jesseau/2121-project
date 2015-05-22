@@ -1,0 +1,7 @@
+List of macros usable:
+pushall
+popall
+divide (Numerator Divisor temp), quotient in Numerator, remanider in Divisor
+
+List of usable functions:
+sleep_Xms (1, 5, 20, 100, 500)
