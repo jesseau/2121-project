@@ -1,4 +1,5 @@
 *.aps
+*.aws
 *.bat
 *.hex
 *.map
