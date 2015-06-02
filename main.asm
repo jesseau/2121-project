@@ -11,10 +11,6 @@
 .def temp3 = r18
 .def temp4 = r19
 
-.equ PORTLDIR = 0xf0
-.equ INITCOLMASK = 0xef
-.equ INITROWMASK = 0x01
-.equ ROWMASK = 0x0f
 .equ BUT1 = 0 ; e.g. use "andi temp, (1<<BUT1)" to check PB1 pressed
 .equ BUT0 = 1
 
@@ -46,6 +42,8 @@ RESET:
 	clr temp1
 	out PORTF, temp1
 	out PORTA, temp1
+
+	ldl mode, 0
 
 	jmp main
 
@@ -85,6 +83,7 @@ main_next3:
 	jmp mainloop
 
 entry_mode:
+	;rcall get_keypad
 
 end:
 	rjmp end

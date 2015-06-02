@@ -38,3 +38,7 @@ sleep_500ms:
 	rcall sleep_100ms
 	rcall sleep_100ms
 	ret
+
+get_keypad:
+	ldi temp1, INITCOLMASK
+	ret

@@ -96,3 +96,7 @@ tools_result:
 .equ F_CPU = 16000000
 .equ DELAY_1MS = F_CPU / 4 / 1000 - 4
 ; 4 cycles per iteration - setup/call-return overhead
+.equ PORTLDIR = 0xf0
+.equ INITCOLMASK = 0xef
+.equ INITROWMASK = 0x01
+.equ ROWMASK = 0x0f
