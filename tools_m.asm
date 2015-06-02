@@ -55,7 +55,7 @@ tools_loop:
 	brlo tools_result
 	sub @0, @1
 	inc @2
-	rjmp loop
+	rjmp tools_loop
 tools_result:
 	mov @1, @0
 	mov @0, @2

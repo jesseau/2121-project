@@ -40,9 +40,9 @@ sleep_500ms:
 	ret
 
 get_keypad:
-	ldi cmask, INITCOLMASK
+	ldl cmask, INITCOLMASK
 	clr col
-	cpi pressed, 1
+	cpl pressed, 1
 	brne keypad_colloop
 debouncer:
 	clr temp1
@@ -55,12 +55,12 @@ debouncer:
 	jmp get_keypad
 
 keypad_colloop:
-	cpi col, 4
+	cpl col, 4
 	breq end_keypad
 	sts PORTL, cmask
 
 	rcall sleep_20ms
-	ldi rmask, INITROWMASK
+	ldl rmask, INITROWMASK
 	clr row
 
 keypad_rowloop:
