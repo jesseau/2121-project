@@ -7,7 +7,7 @@
 .endmacro
 .macro do_lcd_data
 	push r16
-	ldi r16, @0
+	mov r16, @0
 	rcall lcd_data
 	rcall lcd_wait
 	pop r16
@@ -49,7 +49,7 @@ endprintnum:
 
 .macro print_time
 	push temp1
-	set_cursor 0
+	;set_cursor 0
 	convert_num minutes
 	ldi temp1, 58 ; colon
 	do_lcd_data temp1
