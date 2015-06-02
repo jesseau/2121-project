@@ -2,6 +2,11 @@
 .include "tools_m.asm"
 .include "lcd_m.asm"
 
+.def row = r7
+.def col = r8
+.def rmask = r9
+.def cmask = r10
+.def pressed = r11
 .def open = r12
 .def mode = r13
 .def minutes = r14
@@ -63,6 +68,8 @@ RESET:
 	sts TIMSK0, temp1
 
 	ldl mode, 0
+	ldl minutes, 0
+	ldl seconds, 0
 
 	jmp main
 
