@@ -11,9 +11,16 @@
 .def temp3 = r18
 .def temp4 = r19
 
+.def dataL = r24
+.def dataH = r25
+
 .equ BUT1 = 0 ; e.g. use "andi temp, (1<<BUT1)" to check PB1 pressed
 .equ BUT0 = 1
 
+.dseg
+tim0counter: .byte 2
+
+.cseg
 .org 0x00
 	jmp RESET
 	jmp DEFAULT ; for now
@@ -43,11 +50,21 @@ RESET:
 	out PORTF, temp1
 	out PORTA, temp1
 
+	ldi temp1, 0b00000000 ; initialise timer0
+	out TCCR0A, temp1
+	ldi temp1, 0b00000010
+	out TCCR0B, temp1
+	ldi temp1, (1<<TOIE0)
+	sts TIMSK0, temp1
+
 	ldl mode, 0
 
 	jmp main
 
 TIM0OVF:
+	lds dataL, tim0counter
+	lds dataH, tim0counter+1	
+	adiw dataH:dataL, 1	
 
 TIM1OVF:
 

@@ -1,43 +1,50 @@
+.macro stout
+	.if @0 < 64
+		out @0, @1
+	.else
+		sts @0, @1
+.endmacro
+
 .macro pushall
-push r16
-push r17
-push r18
-push r19
-push r20
-push r21
-push r22
-push r23
-push r24
-push r25
-push r26
-push r27
-push r28
-push r29
-push r30
-push r31
-in r16, SREG
-push r16
+	push r16
+	push r17
+	push r18
+	push r19
+	push r20
+	push r21
+	push r22
+	push r23
+	push r24
+	push r25
+	push r26
+	push r27
+	push r28
+	push r29
+	push r30
+	push r31
+	in r16, SREG
+	push r16
 .endmacro
 
 .macro popall
-pop r16
-out SREG, r16
-pop r31
-pop r30
-pop r29
-pop r28
-pop r27
-pop r26
-pop r25
-pop r24
-pop r23
-pop r22
-pop r21
-pop r20
-pop r19
-pop r18
-pop r17
-pop r16
+	pop r16
+	out SREG, r16
+	pop r31
+	pop r30
+	pop r29
+	pop r28
+	pop r27
+	pop r26
+	pop r25
+	pop r24
+	pop r23
+	pop r22
+	pop r21
+	pop r20
+	pop r19
+	pop r18
+	pop r17
+	pop r16
 .endmacro
 
 .macro divide

@@ -1,3 +1,18 @@
+MODES ARE:
+0 -> entry
+1 -> running
+2 -> paused
+3 -> finished
+
+Labels of registers:
+r13 = mode
+r14 = minutes
+r15 = seconds
+r16 = temp1
+r17 = temp2
+r18 = temp3
+r19 = temp4
+
 List of macros usable:
 pushall
 popall
