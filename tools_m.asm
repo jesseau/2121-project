@@ -1,20 +1,4 @@
 .macro pushall
-push r0
-push r1
-push r2
-push r3
-push r4
-push r5
-push r6
-push r7
-push r8
-push r8
-push r10
-push r11
-push r12
-push r13
-push r14
-push r15
 push r16
 push r17
 push r18
@@ -54,25 +38,10 @@ pop r19
 pop r18
 pop r17
 pop r16
-pop r15
-pop r14
-pop r13
-pop r12
-pop r11
-pop r10
-pop r8
-pop r8
-pop r7
-pop r6
-pop r5
-pop r4
-pop r3
-pop r2
-pop r1
-pop r0
 .endmacro
 
 .macro divide
+	push @2
 	clr @2
 tools_loop:
 	cp @0, @1
@@ -83,6 +52,7 @@ tools_loop:
 tools_result:
 	mov @1, @0
 	mov @0, @2
+	pop @2
 .endmacro
 
 ; load immediate to low registers, i.e. r0-r15 so that they're actually usable
