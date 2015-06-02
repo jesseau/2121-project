@@ -17,6 +17,9 @@
 ;backslash symbol
 .endmacro
 
+.macro setcursor
+
+
 .macro print_num
 	pop @0
 	ldi @1, 48
