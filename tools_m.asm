@@ -70,6 +70,13 @@ tools_result:
 	pop temp1
 .endmacro
 
+.macro cpl
+	push temp1
+	mov temp1, @0
+	cpi temp1, @1
+	pop temp1
+.endmacro
+
 .equ F_CPU = 16000000
 .equ DELAY_1MS = F_CPU / 4 / 1000 - 4
 ; 4 cycles per iteration - setup/call-return overhead

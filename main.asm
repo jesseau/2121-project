@@ -62,9 +62,27 @@ RESET:
 	jmp main
 
 TIM0OVF:
+	pushall
 	lds dataL, tim0counter
 	lds dataH, tim0counter+1	
 	adiw dataH:dataL, 1	
+	cpi dataL, LOW(7812)
+	ldi temp1, HIGH(7812)
+	cpc dataH, temp1
+	breq nextsecond ; using reverse branching to prevent rjmp screwups
+	;tim0counter has not counted to 1 second yet
+	jmp tim0end
+		
+nextsecond: ;1 second has passed, so update the clock
+	clr dataL ;set counter back to 0
+	clr dataH
+	
+
+tim0end:
+	sts tim0counter, dataL ;store counter from registers back into memory
+	sts tim0counter+1, dataH
+	popall
+	reti
 
 TIM1OVF:
 
