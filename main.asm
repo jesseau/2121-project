@@ -17,6 +17,11 @@
 .equ BUT1 = 0 ; e.g. use "andi temp, (1<<BUT1)" to check PB1 pressed
 .equ BUT0 = 1
 
+.equ ENTRYMODE = 0
+.equ RUNNINGMODE = 1
+.equ PAUSEMODE = 2
+.equ FINISHMODE = 3
+
 .dseg
 tim0counter: .byte 2
 
@@ -76,7 +81,25 @@ TIM0OVF:
 nextsecond: ;1 second has passed, so update the clock
 	clr dataL ;set counter back to 0
 	clr dataH
-	
+	cpl seconds, 0
+	brne adjust_seconds
+	cpl minutes, 0
+	brne adjust_minutes
+	jmp tim0end
+adjust_minutes:
+	dec minutes
+	ldl seconds, 59
+	jmp display_time
+adjust_seconds:
+	dec seconds	
+
+display_time:
+	print_time
+	cpl seconds, 0
+	brne tim0end
+	cpl minutes, 0
+	brne tim0end
+	ldl mode, FINISHMODE
 
 tim0end:
 	sts tim0counter, dataL ;store counter from registers back into memory
