@@ -85,6 +85,14 @@ tools_result:
 	mov @0, @2
 .endmacro
 
+; load immediate to low registers, i.e. r0-r15 so that they're actually usable
+.macro ldl
+	push temp1
+	ldi temp1, @1
+	mov @0, temp1
+	pop temp1
+.endmacro
+
 .equ F_CPU = 16000000
 .equ DELAY_1MS = F_CPU / 4 / 1000 - 4
 ; 4 cycles per iteration - setup/call-return overhead
