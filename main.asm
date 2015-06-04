@@ -80,7 +80,6 @@ RESET:
 	sts magnetroncounter, temp1
 	sts magnetroncounter, temp1
 
-	ldl mode, 0
 	ldl mode, ENTRYMODE
 	ldl minutes, 0
 	ldl seconds, 0
