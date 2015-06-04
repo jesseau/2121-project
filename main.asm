@@ -74,7 +74,6 @@ RESET:
 	ldi temp1, (1<<TOIE0)
 	sts TIMSK0, temp1
 
-<<<<<<< HEAD
 	clr temp1
 	sts tim0counter, temp1
 	sts tim0counter+1, temp1
@@ -82,9 +81,7 @@ RESET:
 	sts magnetroncounter, temp1
 
 	ldl mode, 0
-=======
 	ldl mode, ENTRYMODE
->>>>>>> 01e8f98904cdb1ba57c39068c17625824c6161ff
 	ldl minutes, 0
 	ldl seconds, 0
 	ldl pressed, 0
@@ -162,13 +159,9 @@ main:
 ;main loop => check what mode we're in, call function for that mode
 ;mode function returns when it is no longer the mode
 mainloop:
-<<<<<<< HEAD
-	rcall get_keypad
+	rcall get_input
 	mov temp1, mode
 	cpi temp1, 0	
-=======
-	cpl mode, ENTRYMODE	
->>>>>>> 01e8f98904cdb1ba57c39068c17625824c6161ff
 	brne main_next1
 	rcall entry_mode
 	jmp mainloop
@@ -187,10 +180,8 @@ main_next3:
 	jmp mainloop
 
 entry_mode:
-<<<<<<< HEAD
-
 	ldl pmode, ENTRYMODE
-	reti
+	ret
 
 running_mode:
 	cpl pmode, ENTRYMODE
@@ -203,20 +194,16 @@ running_mode:
 
 rmodeContinue:
 	ldl pmode, RUNNINGMODE
-	reti
+	ret
 	
 pause_mode:
 	
 	ldl pmode, PAUSEMODE
-	reti
+	ret
 
 finish_mode:
 	ldl pmode, FINISHMODE
-	reti
-=======
-	rcall get_input
 	ret
->>>>>>> 01e8f98904cdb1ba57c39068c17625824c6161ff
 
 end:
 	rjmp end
