@@ -40,26 +40,54 @@ sleep_500ms:
 	ret
 
 ; ---------------------------------------------------------
-; get_input - returns the number on the keypad, otherwise the ASCII
-; value of the letter/symbol pressed. also returns pushbuttons
+; get_input - returns keypad numbers, ASCII values of letters/symbols
+; and pre-defined values of pushbuttons. behaves a bit like c scanf
+; holds the program up and waits for input until it's received
 get_input:
 	ldl cmask, INITCOLMASK
 	clr col
 	cpl pressed, 1
 	brne keypad_colloop
 
-keypad_debouncer:
+input_debouncer:
+	; check for keypad presses
 	lds temp1, PINL
 	nop
 	andi temp1, ROWMASK
 	cpi temp1, ROWMASK
-	brne keypad_debouncer
+	brne input_debouncer
+
+	; check for button presses
+	in temp1, PINB
+	andi temp1, (1<<BUT1)|(1<<BUT0)
+	cpi temp1, (1<<BUT1)|(1<<BUT0)
+	brne input_debouncer
+
 	clr pressed
 	jmp get_input
 
+button_detect:
+	clr temp3
+	in temp1, PINB
+	mov temp2, temp1
+	andi temp2, (1<<BUT1)
+	breq button1_pressed
+	mov temp2, temp1
+	andi temp2, (1<<BUT0)
+	breq button0_pressed
+	jmp get_input
+button1_pressed: ; open
+	ldi temp1, BUT1PRESSED
+	out PORTC, temp1
+	ret
+button0_pressed: ; closed
+	ldi temp1, BUT0PRESSED
+	out PORTC, temp1
+	ret
+
 keypad_colloop:
 	cpl col, 4
-	breq get_input
+	breq button_detect
 	sts PORTL, cmask
 
 	rcall sleep_5ms
