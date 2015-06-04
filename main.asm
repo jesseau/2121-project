@@ -16,13 +16,15 @@
 .def temp1 = r16
 .def temp2 = r17
 .def temp3 = r18
-.def temp4 = r19
+.def result = r19
 
 .def dataL = r24
 .def dataH = r25
 
 .equ BUT1 = 0 ; e.g. use "andi temp, (1<<BUT1)" to check PB1 pressed
 .equ BUT0 = 1
+.equ BUT1PRESSED = 0xFA
+.equ BUT0PRESSED = 0xFB
 
 .equ ENTRYMODE = 0
 .equ RUNNINGMODE = 1
@@ -72,6 +74,7 @@ RESET:
 	ldi temp1, (1<<TOIE0)
 	sts TIMSK0, temp1
 
+<<<<<<< HEAD
 	clr temp1
 	sts tim0counter, temp1
 	sts tim0counter+1, temp1
@@ -79,8 +82,14 @@ RESET:
 	sts magnetroncounter, temp1
 
 	ldl mode, 0
+=======
+	ldl mode, ENTRYMODE
+>>>>>>> 01e8f98904cdb1ba57c39068c17625824c6161ff
 	ldl minutes, 0
 	ldl seconds, 0
+	ldl pressed, 0
+
+	clr r4
 
 	jmp main
 
@@ -105,7 +114,7 @@ mag_and_turn:
 netxcomp: ;next comparison	
 	lds dataL, tim0counter
 	lds dataH, tim0counter+1	
-	adiw dataH:dataL, 1	
+	adiw dataH:dataL, 1
 	cpi dataL, LOW(7812)
 	ldi temp1, HIGH(7812)
 	cpc dataH, temp1
@@ -148,17 +157,18 @@ TIM2OVF:
 
 
 main:
-;setting the initial mode to entry
-	ldi temp1, 0
-	mov mode, temp1 
 ;doing some stuff before the main loop
 
 ;main loop => check what mode we're in, call function for that mode
 ;mode function returns when it is no longer the mode
 mainloop:
+<<<<<<< HEAD
 	rcall get_keypad
 	mov temp1, mode
 	cpi temp1, 0	
+=======
+	cpl mode, ENTRYMODE	
+>>>>>>> 01e8f98904cdb1ba57c39068c17625824c6161ff
 	brne main_next1
 	rcall entry_mode
 	jmp mainloop
@@ -177,6 +187,7 @@ main_next3:
 	jmp mainloop
 
 entry_mode:
+<<<<<<< HEAD
 
 	ldl pmode, ENTRYMODE
 	reti
@@ -202,6 +213,10 @@ pause_mode:
 finish_mode:
 	ldl pmode, FINISHMODE
 	reti
+=======
+	rcall get_input
+	ret
+>>>>>>> 01e8f98904cdb1ba57c39068c17625824c6161ff
 
 end:
 	rjmp end

@@ -70,10 +70,34 @@ tools_result:
 	pop temp1
 .endmacro
 
+; compare immediate to low registers
 .macro cpl
 	push temp1
 	mov temp1, @0
 	cpi temp1, @1
+	pop temp1
+.endmacro
+
+.macro sbrl
+	push temp1
+	mov temp1, @0
+	sbr temp1, @1
+	mov @0, temp1
+	pop temp1
+.endmacro
+
+.macro cbrl
+	push temp1
+	mov temp1, @0
+	cbr temp1, @1
+	mov @0, temp1
+	pop temp1
+.endmacro
+
+.macro do_led
+	push temp1
+	ldi temp1, @0
+	out PORTC, temp1
 	pop temp1
 .endmacro
 
