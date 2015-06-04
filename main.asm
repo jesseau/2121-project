@@ -2,6 +2,7 @@
 .include "tools_m.asm"
 .include "lcd_m.asm"
 
+.def printed = r4
 .def pmode = r5
 .def power = r6
 .def row = r7
@@ -99,13 +100,38 @@ tim0continue:
 ;do the turntable first
 	lds dataL, turntcounter
 	lds dataH, turntcounter+1
+	adiw dataH:dataL, 1
 	cpi dataL, LOW(1953)
 	ldi temp1, HIGH(1953)
 	cpc dataH, temp1
 	breq mag_and_turn
-	jmp nextcomp
+	jmp mag_and_turn_end
 
 mag_and_turn:
+	clr dataL
+	clr dataH
+	lds temp1, magcounter
+	cp temp1, pow
+	brge motoron
+;motor turns off
+
+	jmp postmotor
+motoron:
+;motor turns on
+
+postmotor:
+	inc temp1
+	cpi temp1, 4
+	brlt turntable
+	subi temp1, 4
+	sts magcounter, temp1
+
+turntable:
+	
+
+mag_and_turn_end:
+	sts turntcounter, dataL
+	sts turntcounter+1, dataH	
 
 netxcomp: ;next comparison	
 	lds dataL, tim0counter
@@ -140,6 +166,7 @@ display_time:
 	cpl minutes, 0
 	brne tim0end
 	ldl mode, FINISHMODE
+	ldl pressed, 0
 
 tim0end:
 	sts tim0counter, dataL ;store counter from registers back into memory
@@ -159,6 +186,12 @@ main:
 ;mode function returns when it is no longer the mode
 mainloop:
 	rcall get_input
+	cpi result, BUT1PRESSED
+	brne main_continue
+	ldl open, 1
+	
+	
+
 	mov temp1, mode
 	cpi temp1, 0	
 	brne main_next1
@@ -196,16 +229,46 @@ rmodeContinue:
 	ret
 	
 pause_mode:
-	
+	cpl pressed, '*'
 	ldl pmode, PAUSEMODE
 	ret
 
 finish_mode:
+	cpl printed, 1
+	brne printMessage
+	jmp fmode_checkbuttons
+printMessage:
+	do_lcd_command 0b00000001
+	do_lcd_data_im 'D'
+	do_lcd_data_im 'o'
+	do_lcd_data_im 'n'
+	do_lcd_data_im 'e'
+	do_lcd_command 0b11000000 ; set cursor to second line
+	do_lcd_data_im 'R'
+	do_lcd_data_im 'e'
+	do_lcd_data_im 'm'
+	do_lcd_data_im 'o'
+	do_lcd_data_im 'v'
+	do_lcd_data_im 'e'
+	do_lcd_data_im ' '
+	do_lcd_data_im 'F'
+	do_lcd_data_im 'o'
+	do_lcd_data_im 'o'
+	do_lcd_data_im 'd'
+	ldl printed, 1
+
+fmode_checkbuttons:
+	cpi result, BUT1PRESSED
+	brne fmode_nextcheck
+	ldl mode, ENTRYMODE
+fmode_nextcheck:
+	cpi result, '#'
+	brne fmode_finish
+	ldl mode, ENTRYMODE
+
+fmode_finish:
 	ldl pmode, FINISHMODE
 	ret
-
-end:
-	rjmp end
 
 .include "tools_f.asm"
 .include "lcd_f.asm"
