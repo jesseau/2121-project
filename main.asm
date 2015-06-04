@@ -2,6 +2,7 @@
 .include "tools_m.asm"
 .include "lcd_m.asm"
 
+.def power = r6
 .def row = r7
 .def col = r8
 .def rmask = r9
@@ -29,6 +30,7 @@
 
 .dseg
 tim0counter: .byte 2
+magnetroncounter: .byte 2
 
 .cseg
 .org 0x00
@@ -67,6 +69,12 @@ RESET:
 	ldi temp1, (1<<TOIE0)
 	sts TIMSK0, temp1
 
+	clr temp1
+	sts tim0counter, temp1
+	sts tim0counter+1, temp1
+	sts magnetroncounter, temp1
+	sts magnetroncounter, temp1
+
 	ldl mode, 0
 	ldl minutes, 0
 	ldl seconds, 0
@@ -88,6 +96,11 @@ TIM0OVF:
 nextsecond: ;1 second has passed, so update the clock
 	clr dataL ;set counter back to 0
 	clr dataH
+	cpl mode, RUNNINGMODE ;check if in running mode
+	breq tim0continue
+	jmp tim0end
+
+tim0continue:
 	cpl seconds, 0
 	brne adjust_seconds
 	cpl minutes, 0
@@ -128,6 +141,7 @@ main:
 ;main loop => check what mode we're in, call function for that mode
 ;mode function returns when it is no longer the mode
 mainloop:
+	rcall get_keypad
 	mov temp1, mode
 	cpi temp1, 0	
 	brne main_next1
@@ -148,7 +162,12 @@ main_next3:
 	jmp mainloop
 
 entry_mode:
-	;rcall get_keypad
+
+running_mode:
+	
+pause_mode:
+
+finish_mode:
 
 end:
 	rjmp end
