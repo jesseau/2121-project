@@ -2,6 +2,7 @@
 .include "tools_m.asm"
 .include "lcd_m.asm"
 
+.def pmode = r5
 .def power = r6
 .def row = r7
 .def col = r8
@@ -30,7 +31,9 @@
 
 .dseg
 tim0counter: .byte 2
-magnetroncounter: .byte 2
+turntcounter: .byte 2 ;stands for turntable counter
+turntpos: .byte 1 ;turntable position
+magcounter: .byte 1
 
 .cseg
 .org 0x00
@@ -83,6 +86,23 @@ RESET:
 
 TIM0OVF:
 	pushall
+	cpl mode, RUNNINGMODE ;check if in running mode
+	breq tim0continue
+	jmp tim0end
+
+tim0continue:
+;do the turntable first
+	lds dataL, turntcounter
+	lds dataH, turntcounter+1
+	cpi dataL, LOW(1953)
+	ldi temp1, HIGH(1953)
+	cpc dataH, temp1
+	breq mag_and_turn
+	jmp nextcomp
+
+mag_and_turn:
+
+netxcomp: ;next comparison	
 	lds dataL, tim0counter
 	lds dataH, tim0counter+1	
 	adiw dataH:dataL, 1	
@@ -96,11 +116,6 @@ TIM0OVF:
 nextsecond: ;1 second has passed, so update the clock
 	clr dataL ;set counter back to 0
 	clr dataH
-	cpl mode, RUNNINGMODE ;check if in running mode
-	breq tim0continue
-	jmp tim0end
-
-tim0continue:
 	cpl seconds, 0
 	brne adjust_seconds
 	cpl minutes, 0
@@ -163,11 +178,30 @@ main_next3:
 
 entry_mode:
 
+	ldl pmode, ENTRYMODE
+	reti
+
 running_mode:
+	cpl pmode, ENTRYMODE
+	brne rmodeContinue
+	clr temp1
+	sts tim0counter, temp1
+	sts tim0counter+1, temp1	
+	sts turntcounter, temp1
+	sts turntcounter+1, temp1
+
+rmodeContinue:
+	ldl pmode, RUNNINGMODE
+	reti
 	
 pause_mode:
+	
+	ldl pmode, PAUSEMODE
+	reti
 
 finish_mode:
+	ldl pmode, FINISHMODE
+	reti
 
 end:
 	rjmp end
