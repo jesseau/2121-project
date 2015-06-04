@@ -12,6 +12,13 @@
 	rcall lcd_wait
 	pop r16
 .endmacro
+.macro do_lcd_data_im
+	push r16
+	ldi r16, @0
+	rcall lcd_data
+	rcall lcd_wait
+	pop r16
+.endmacro
 
 .macro make_backslash
 ;backslash symbol
