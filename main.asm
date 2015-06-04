@@ -141,11 +141,14 @@ mag_and_turn:
 	lds temp1, magcounter
 	cp temp1, pow
 	brge motoron
+
 ;motor turns off
+	cbi PORTE, 4
 
 	jmp postmotor
 motoron:
 ;motor turns on
+	sbi PORTE, 4
 
 postmotor:
 	inc temp1
