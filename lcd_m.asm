@@ -18,7 +18,7 @@
 .endmacro
 
 .macro setcursor
-
+.endmacro
 
 .macro print_num
 	pop @0
