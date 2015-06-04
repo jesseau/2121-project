@@ -25,8 +25,8 @@
 
 .equ BUT1 = 0 ; e.g. use "andi temp, (1<<BUT1)" to check PB1 pressed
 .equ BUT0 = 1
-.equ BUT1PRESSED = 0xFA
-.equ BUT0PRESSED = 0xFB
+.equ BUT1PRESSED = 0xF0
+.equ BUT0PRESSED = 0x0F
 
 .equ ENTRYMODE = 0
 .equ RUNNINGMODE = 1
@@ -69,6 +69,9 @@ RESET:
 	clr temp1
 	out PORTF, temp1
 	out PORTA, temp1
+
+	ldi temp1, (1<<DDE4) ; initialise motor at PE2 (OCR3B)
+	out DDRE, temp1
 
 	ldi temp1, 0b00000000 ; initialise timer0
 	out TCCR0A, temp1
