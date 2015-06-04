@@ -2,6 +2,8 @@
 .include "tools_m.asm"
 .include "lcd_m.asm"
 
+.def enterpl = r2 ; boolean flag for power level insertion mode
+.def numpressed = r3 ; for entry mode, how many digits have been pressed so far
 .def ttpos = r4 ;turntable position
 .def pmode = r5
 .def power = r6
@@ -228,23 +230,29 @@ tim0end:
 	popall
 	reti
 
-TIM1OVF:
-
-TIM2OVF:
 
 
 main:
-;doing some stuff before the main loop
 
 ;main loop => check what mode we're in, call function for that mode
 ;mode function returns when it is no longer the mode
 mainloop:
 	rcall get_input
+	cpl open, 1
+	brne main_normal_input
+	cpi result, BUT0PRESSED
+	brne main_no_input
+	ldl open, 0
+	jmp main_mode_check
+main_no_input:
+	ldi result, BUT1PRESSED
+	jmp main_mode_check
+main_normal_input:
 	cpi result, BUT1PRESSED
-	brne main_continue
+	brne main_mode_check
 	ldl open, 1
-	; change flag for open or closed state	
-
+	
+main_mode_check:
 	mov temp1, mode
 	cpi temp1, 0	
 	brne main_next1
@@ -253,127 +261,22 @@ mainloop:
 main_next1:
 	cpi temp1, 1
 	brne main_next2
-	;rcall running_mode
+	rcall running_mode
 	jmp mainloop
 main_next2:
 	cpi temp1, 2
 	brne main_next3
-	;rcall pause_mode
+	rcall pause_mode
 	jmp mainloop
 main_next3:
-	;rcall finish_mode
+	rcall finish_mode
 	jmp mainloop
 
-entry_mode:
-	
-	
-	ldl pmode, ENTRYMODE
-	ret
 
-running_mode:
-	cpl pmode, ENTRYMODE
-	brne running_continue
-	cpi dir, 1 
-	brne running_clockwise
-	ldi dir, -1
-	jmp running_reset
-running_clockwise:
-	ldi dir, 1 	
-running_reset:
-	clr temp1
-	sts tim0counter, temp1
-	sts tim0counter+1, temp1	
-	sts turntcounter, temp1
-	sts turntcounter+1, temp1
-
-running_continue:
-	cpi result, '*'
-	brne running_checkC
-	inc minutes
-running_checkC:
-	cpi result, 'C'
-	brne running_checkD
-	ldi temp, 30
-	add seconds, 30	
-running_checkD:
-	cpi result, 'D'
-	brne running_seconds_of
-	ldi temp, 30
-	sub seconds, 30	
-
-running_seconds_of:
-	cpl seconds, 61
-	brlt running_seconds_uf
-	inc minutes
-	ldi temp1, 60
-	sub seconds, temp1
-	cpl seconds, 61
-	brlt running_seconds_uf
-	inc minutes
-	ldi temp1, 60
-	sub seconds, temp1
-	
-running_seconds_uf:
-	cpl seconds, 0
-	brge running_minutes_of
-	dec minutes
-	ldi temp1, 60
-	add seconds, temp1
-	
-running_minutes_of:
-	cpl minutes, 100
-	brlt running_minutes_uf
-	ldl minutes, 99
-
-running_minutes_uf:
-	cpl minutes, 0
-	brge running_mode_end
-	ldl minutes, 0
-	ldl seconds, 0	
-
-running_mode_end:
-	ldl pmode, RUNNINGMODE
-	ret
-	
-pause_mode:
-	lds temp1, pausetype
-	cpi pausetype, 1
-	brne pause_button_press
-	cpl open, 0	
-	brne pause_mode_end
-	ldl mode, RUNNINGMODE
-	jmp pause_mode_end
-
-pause_button_press:
-	cpi result, '*'
-	brne pause_mode_end
-	ldl mode, RUNNINGMODE	 
-
-pause_mode_end:
-	ldl pmode, PAUSEMODE
-	ret
-
-finish_mode:
-	cpl printed, 1
-	brne printMessage
-	jmp fmode_checkbuttons
-printMessage:
-	ldl printed, 1
-
-fmode_checkbuttons:
-	cpi result, BUT1PRESSED
-	brne fmode_nextcheck
-	do_lcd_command 0b00000001
-	ldl mode, ENTRYMODE
-fmode_nextcheck:
-	cpi result, '#'
-	brne fmode_finish
-	do_lcd_command 0b00000001
-	ldl mode, ENTRYMODE
-
-fmode_finish:
-	ldl pmode, FINISHMODE
-	ret
+.include "entry.asm"
+.include "running.asm"
+.include "pause.asm"
+.include "finish.asm"
 
 .include "tools_f.asm"
 .include "lcd_f.asm"
