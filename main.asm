@@ -2,7 +2,9 @@
 .include "tools_m.asm"
 .include "lcd_m.asm"
 
-.def printed = r4
+.def enterpl = r2 ; boolean flag for power level insertion mode
+.def numpressed = r3 ; for entry mode, how many digits have been pressed so far
+.def ttpos = r4 ;turntable position
 .def pmode = r5
 .def power = r6
 .def row = r7
@@ -18,6 +20,7 @@
 .def temp2 = r17
 .def temp3 = r18
 .def result = r19
+.def dir= r20 ; stands for direction
 
 .def fadedir = r21 ; fade direction for backlight (advanced feature)
 
@@ -43,6 +46,7 @@ tim3counter: .byte 2
 turntcounter: .byte 2 ;stands for turntable counter
 turntpos: .byte 1 ;turntable position
 magcounter: .byte 1
+pausetype: .byte 1
 
 
 .cseg
@@ -58,7 +62,7 @@ magcounter: .byte 1
 DEFAULT:
 	reti
 
-RESET:
+RESET:	
 	ldi temp1, high(RAMEND) ; initialise stack pointer
 	out SPH, temp1
 	ldi temp1, low(RAMEND)
@@ -102,6 +106,8 @@ RESET:
 	ldi temp1, (1<<OCIE3C) ; enable cp interrupt
 	sts TIMSK3, temp1
 
+	ldi dir, 1
+	
 	clr temp1
 	sts tim0counter, temp1
 	sts tim0counter+1, temp1
@@ -112,24 +118,42 @@ RESET:
 
 	ldl fadedir, INCREASING
 
+	ldl ttpos, 0
 	ldl mode, ENTRYMODE
 	ldl minutes, 0
 	ldl seconds, 0
 	ldl pressed, 0
 
-	clr r4
+;initialise lcd
+	do_lcd_command 0b00111000 ; 2x5x7
+	rcall sleep_5ms
+	do_lcd_command 0b00111000 ; 2x5x7
+	rcall sleep_1ms
+	do_lcd_command 0b00111000 ; 2x5x7
+	do_lcd_command 0b00111000 ; 2x5x7
+	do_lcd_command 0b00001000 ; display off?
+	do_lcd_command 0b00000001 ; clear display
+	do_lcd_command 0b00000110 ; increment, no display shift
+	do_lcd_command 0b00001111 ; Cursor on, bar, no blink
+	make_backslash
+
+;test backslash
+	do_lcd_command 0b10000000
+	do_lcd_data_im 0
 
 	sei
 	jmp main
 
 TIM0OVF:
 	pushall
+	rcall display_turnt
+	rcall display_open
 	cpl mode, RUNNINGMODE ;check if in running mode
 	breq tim0continue
 	jmp tim0end
 
 tim0continue:
-;do the turntable first
+;do the mag/turntable first
 	lds dataL, turntcounter
 	lds dataH, turntcounter+1
 	adiw dataH:dataL, 1
@@ -145,11 +169,14 @@ mag_and_turn:
 	lds temp1, magcounter
 	cp temp1, power
 	brge motoron
+
 ;motor turns off
+	cbi PORTE, 4
 
 	jmp postmotor
 motoron:
 ;motor turns on
+	sbi PORTE, 4
 
 postmotor:
 	inc temp1
@@ -159,7 +186,14 @@ postmotor:
 	sts magcounter, temp1
 
 turntable:
-	
+	add ttpos, dir
+	cpl ttpos, 0 ; check for underflow
+	brge turntable_check_of
+	ldl ttpos, 3
+turntable_check_of:
+	cpl ttpos, 4
+	brlt mag_and_turn_end
+	ldl ttpos, 0
 
 mag_and_turn_end:
 	sts turntcounter, dataL
@@ -183,7 +217,7 @@ nextsecond: ;1 second has passed, so update the clock
 	brne adjust_seconds
 	cpl minutes, 0
 	brne adjust_minutes
-	jmp tim0end
+	jmp display_time
 adjust_minutes:
 	dec minutes
 	ldl seconds, 59
@@ -194,11 +228,32 @@ adjust_seconds:
 display_time:
 	print_time
 	cpl seconds, 0
-	brne tim0end
+	breq comp_minutes
+	jmp tim0end
+comp_minutes:
 	cpl minutes, 0
-	brne tim0end
+	breq change_finish_mode
+	jmp tim0end
+
+change_finish_mode:
 	ldl mode, FINISHMODE
-	ldl pressed, 0
+	do_lcd_command 0b10000000
+	do_lcd_data_im 'D'
+	do_lcd_data_im 'o'
+	do_lcd_data_im 'n'
+	do_lcd_data_im 'e'
+	do_lcd_command 0b11000000 ; set cursor to second line
+	do_lcd_data_im 'R'
+	do_lcd_data_im 'e'
+	do_lcd_data_im 'm'
+	do_lcd_data_im 'o'
+	do_lcd_data_im 'v'
+	do_lcd_data_im 'e'
+	do_lcd_data_im ' '
+	do_lcd_data_im 'F'
+	do_lcd_data_im 'o'
+	do_lcd_data_im 'o'
+	do_lcd_data_im 'd'
 
 tim0end:
 	sts tim0counter, dataL ;store counter from registers back into memory
@@ -253,18 +308,28 @@ TIM3END:
 	popall
 	reti
 
-
 main:
-;doing some stuff before the main loop
 
 ;main loop => check what mode we're in, call function for that mode
 ;mode function returns when it is no longer the mode
 mainloop:
 	rcall get_input
+	cpl open, 1
+	brne main_normal_input
+	cpi result, BUT0PRESSED
+	brne main_no_input
+	ldl open, 0
+	jmp main_mode_check
+main_no_input:
+	ldi result, BUT1PRESSED
+	jmp main_mode_check
+main_normal_input:
 	cpi result, BUT1PRESSED
-	;brne main_continue
-	ldl open, 1
 
+	brne main_mode_check
+	ldl open, 1
+	
+main_mode_check:
 	mov temp1, mode
 	cpi temp1, 0	
 	brne main_next1
@@ -273,16 +338,21 @@ mainloop:
 main_next1:
 	cpi temp1, 1
 	brne main_next2
-	;rcall running_mode
+	rcall running_mode
 	jmp mainloop
 main_next2:
 	cpi temp1, 2
 	brne main_next3
-	;rcall pause_mode
+	rcall pause_mode
 	jmp mainloop
 main_next3:
-	;rcall finish_mode
+	rcall finish_mode
 	jmp mainloop
+
+.include "entry.asm"
+.include "running.asm"
+.include "pause.asm"
+.include "finish.asm"
 
 .include "tools_f.asm"
 .include "lcd_f.asm"

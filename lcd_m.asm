@@ -22,10 +22,16 @@
 .endmacro
 
 .macro make_backslash
-;backslash symbol
-.endmacro
-
-.macro setcursor
+	do_lcd_command 0b01000000
+	do_lcd_data_im 0b00000000
+	do_lcd_data_im 0b00000001
+	do_lcd_data_im 0b00000011
+	do_lcd_data_im 0b00000110
+	do_lcd_data_im 0b00001100
+	do_lcd_data_im 0b00001100
+	do_lcd_data_im 0b00011000
+	do_lcd_data_im 0b00010000
+	do_lcd_data_im 0b00000000
 .endmacro
 
 .macro print_num

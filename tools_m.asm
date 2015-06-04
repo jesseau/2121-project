@@ -9,9 +9,7 @@
 	push r16
 	push r17
 	push r18
-	push r19
 	push r20
-	push r21
 	push r22
 	push r23
 	push r24
@@ -39,9 +37,7 @@
 	pop r24
 	pop r23
 	pop r22
-	pop r21
 	pop r20
-	pop r19
 	pop r18
 	pop r17
 	pop r16
