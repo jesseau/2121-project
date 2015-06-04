@@ -77,10 +77,12 @@ button_detect:
 	breq button0_pressed
 	jmp get_input
 button1_pressed: ; open
+	rcall reset_fadetimer
 	ldi temp1, BUT1PRESSED
 	out PORTC, temp1
 	ret
 button0_pressed: ; closed
+	rcall reset_fadetimer
 	ldi temp1, BUT0PRESSED
 	out PORTC, temp1
 	ret
@@ -151,9 +153,19 @@ keypad_zero:
 
 keypad_store:
 	mov result, temp1 ; global var for determining what was pressed
+	rcall reset_fadetimer
 
 keypad_end:
 	inc r4
 	out PORTC, result
 	rcall sleep_5ms
+	ret
+
+reset_fadetimer:
+	push temp1
+	clr temp1
+	sts tim3counter, temp1
+	sts tim3counter+1, temp1
+	ldl fadedir, INCREASING
+	pop temp1
 	ret

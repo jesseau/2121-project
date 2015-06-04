@@ -19,6 +19,8 @@
 .def temp3 = r18
 .def result = r19
 
+.def fadedir = r21 ; fade direction for backlight (advanced feature)
+
 .def dataL = r24
 .def dataH = r25
 
@@ -32,16 +34,26 @@
 .equ PAUSEMODE = 2
 .equ FINISHMODE = 3
 
+.equ INCREASING = 1
+.equ DECREASING = 0
+
 .dseg
 tim0counter: .byte 2
+tim3counter: .byte 2
 turntcounter: .byte 2 ;stands for turntable counter
 turntpos: .byte 1 ;turntable position
 magcounter: .byte 1
 
+
 .cseg
 .org 0x00
 	jmp RESET
-	jmp DEFAULT ; for now
+.org OVF1addr
+	jmp TIM1OVF
+.org OVF0addr
+	jmp TIM0OVF
+.org OVF3addr
+	jmp TIM3OVF
 
 DEFAULT:
 	reti
@@ -68,21 +80,37 @@ RESET:
 	out PORTF, temp1
 	out PORTA, temp1
 
-	ldi temp1, (1<<DDE4) ; initialise motor at PE2 (OCR3B)
+	ldi temp1, (1<<PE4)|(1<<PE5) ; initialise motor and BL
 	out DDRE, temp1
 
-	ldi temp1, 0b00000000 ; initialise timer0
+	ldi temp1, 0 ; initialise timer0
 	out TCCR0A, temp1
-	ldi temp1, 0b00000010
+	ldi temp1, (1<<CS01)
 	out TCCR0B, temp1
 	ldi temp1, (1<<TOIE0)
 	sts TIMSK0, temp1
 
+	ldi temp1, 254
+	sts OCR3BL, temp1
+	clr temp1
+	sts OCR3CH, temp1
+
+	ldi temp1, (1<<WGM30)|(1<<COM3C1)
+	sts TCCR3A, temp1
+	ldi temp1, (1<<CS32) ; 256 prescaler
+	sts TCCR3B, temp1
+	ldi temp1, (1<<OCIE3C) ; enable cp interrupt
+	sts TIMSK3, temp1
+
 	clr temp1
 	sts tim0counter, temp1
 	sts tim0counter+1, temp1
-	sts magnetroncounter, temp1
-	sts magnetroncounter, temp1
+	sts tim3counter, temp1
+	sts tim3counter+1, temp1
+	sts magcounter, temp1
+	sts magcounter, temp1
+
+	ldl fadedir, INCREASING
 
 	ldl mode, ENTRYMODE
 	ldl minutes, 0
@@ -91,6 +119,7 @@ RESET:
 
 	clr r4
 
+	sei
 	jmp main
 
 TIM0OVF:
@@ -114,7 +143,7 @@ mag_and_turn:
 	clr dataL
 	clr dataH
 	lds temp1, magcounter
-	cp temp1, pow
+	cp temp1, power
 	brge motoron
 ;motor turns off
 
@@ -178,8 +207,51 @@ tim0end:
 	reti
 
 TIM1OVF:
+	reti
 
-TIM2OVF:
+TIM3OVF:
+	pushall
+tim3_loop:
+	lds temp1, OCR3CL
+	cpl fadedir, INCREASING
+	breq fade_increasing
+	cpl fadedir, DECREASING
+	breq fade_decreasing
+fade_decreasing:
+	cpi temp1, 0
+	breq TIM3CONT
+	subi temp1, 2
+	sts OCR3CL, temp1
+	jmp TIM3CONT
+fade_increasing:
+	cpi temp1, 254
+	breq TIM3CONT
+	subi temp1, -2
+	sts OCR3CL, temp1
+
+TIM3CONT:
+	lds dataL, tim3counter
+	lds dataH, tim3counter+1
+	adiw dataH:dataL, 1
+	cpi dataL, low(2460) ; use 2460 for 10 seconds later
+	ldi temp1, high(2460)
+	cpc dataH, temp1
+	brne TIM3END
+
+	cpl mode, RUNNINGMODE
+	breq running_ignore
+	ldl fadedir, DECREASING
+
+running_ignore:
+	clr temp1
+	mov dataL, temp1
+	mov dataH, temp1
+
+TIM3END:
+	sts tim3counter, dataL
+	sts tim3counter+1, dataH
+	popall
+	reti
 
 
 main:
@@ -190,10 +262,8 @@ main:
 mainloop:
 	rcall get_input
 	cpi result, BUT1PRESSED
-	brne main_continue
+	;brne main_continue
 	ldl open, 1
-	
-	
 
 	mov temp1, mode
 	cpi temp1, 0	
@@ -213,65 +283,6 @@ main_next2:
 main_next3:
 	;rcall finish_mode
 	jmp mainloop
-
-entry_mode:
-	ldl pmode, ENTRYMODE
-	ret
-
-running_mode:
-	cpl pmode, ENTRYMODE
-	brne rmodeContinue
-	clr temp1
-	sts tim0counter, temp1
-	sts tim0counter+1, temp1	
-	sts turntcounter, temp1
-	sts turntcounter+1, temp1
-
-rmodeContinue:
-	ldl pmode, RUNNINGMODE
-	ret
-	
-pause_mode:
-	cpl pressed, '*'
-	ldl pmode, PAUSEMODE
-	ret
-
-finish_mode:
-	cpl printed, 1
-	brne printMessage
-	jmp fmode_checkbuttons
-printMessage:
-	do_lcd_command 0b00000001
-	do_lcd_data_im 'D'
-	do_lcd_data_im 'o'
-	do_lcd_data_im 'n'
-	do_lcd_data_im 'e'
-	do_lcd_command 0b11000000 ; set cursor to second line
-	do_lcd_data_im 'R'
-	do_lcd_data_im 'e'
-	do_lcd_data_im 'm'
-	do_lcd_data_im 'o'
-	do_lcd_data_im 'v'
-	do_lcd_data_im 'e'
-	do_lcd_data_im ' '
-	do_lcd_data_im 'F'
-	do_lcd_data_im 'o'
-	do_lcd_data_im 'o'
-	do_lcd_data_im 'd'
-	ldl printed, 1
-
-fmode_checkbuttons:
-	cpi result, BUT1PRESSED
-	brne fmode_nextcheck
-	ldl mode, ENTRYMODE
-fmode_nextcheck:
-	cpi result, '#'
-	brne fmode_finish
-	ldl mode, ENTRYMODE
-
-fmode_finish:
-	ldl pmode, FINISHMODE
-	ret
 
 .include "tools_f.asm"
 .include "lcd_f.asm"
