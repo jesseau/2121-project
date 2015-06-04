@@ -2,7 +2,7 @@
 .include "tools_m.asm"
 .include "lcd_m.asm"
 
-.def printed = r4
+.def ttpos = r4 ;turntable position
 .def pmode = r5
 .def power = r6
 .def row = r7
@@ -18,7 +18,7 @@
 .def temp2 = r17
 .def temp3 = r18
 .def result = r19
-.def direction = r20
+.def dir= r20 ; stands for direction
 
 .def dataL = r24
 .def dataH = r25
@@ -48,7 +48,7 @@ pausetype: .byte 1
 DEFAULT:
 	reti
 
-RESET:
+RESET:	
 	ldi temp1, high(RAMEND) ; initialise stack pointer
 	out SPH, temp1
 	ldi temp1, low(RAMEND)
@@ -80,19 +80,38 @@ RESET:
 	ldi temp1, (1<<TOIE0)
 	sts TIMSK0, temp1
 
+	ldi dir, 1
+	
 	clr temp1
 	sts tim0counter, temp1
 	sts tim0counter+1, temp1
 	sts magnetroncounter, temp1
 	sts magnetroncounter, temp1
 
+	ldl ttpos, 0
 	ldl mode, ENTRYMODE
 	ldl minutes, 0
 	ldl seconds, 0
 	ldl pressed, 0
 
-	clr r4
+;initialise lcd
+	do_lcd_command 0b00111000 ; 2x5x7
+	rcall sleep_5ms
+	do_lcd_command 0b00111000 ; 2x5x7
+	rcall sleep_1ms
+	do_lcd_command 0b00111000 ; 2x5x7
+	do_lcd_command 0b00111000 ; 2x5x7
+	do_lcd_command 0b00001000 ; display off?
+	do_lcd_command 0b00000001 ; clear display
+	do_lcd_command 0b00000110 ; increment, no display shift
+	do_lcd_command 0b00001111 ; Cursor on, bar, no blink
+	make_backslash
 
+;test backslash
+	do_lcd_command 0b10000000
+	do_lcd_data_im 0
+
+	clr r4
 	jmp main
 
 TIM0OVF:
@@ -104,7 +123,7 @@ TIM0OVF:
 	jmp tim0end
 
 tim0continue:
-;do the turntable first
+;do the mag/turntable first
 	lds dataL, turntcounter
 	lds dataH, turntcounter+1
 	adiw dataH:dataL, 1
@@ -134,7 +153,14 @@ postmotor:
 	sts magcounter, temp1
 
 turntable:
-	
+	add ttpos, dir
+	cpl ttpos, 0 ; check for underflow
+	brge turntable_check_of
+	ldl ttpos, 3
+turntable_check_of:
+	cpl ttpos, 4
+	brlt mag_and_turn_end
+	ldl ttpos, 0
 
 mag_and_turn_end:
 	sts turntcounter, dataL
@@ -247,6 +273,13 @@ entry_mode:
 running_mode:
 	cpl pmode, ENTRYMODE
 	brne running_continue
+	cpi dir, 1 
+	brne running_clockwise
+	ldi dir, -1
+	jmp running_reset
+running_clockwise:
+	ldi dir, 1 	
+running_reset:
 	clr temp1
 	sts tim0counter, temp1
 	sts tim0counter+1, temp1	
