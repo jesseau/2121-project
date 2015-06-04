@@ -63,6 +63,7 @@ DEFAULT:
 	reti
 
 RESET:	
+	cli
 	ldi temp1, high(RAMEND) ; initialise stack pointer
 	out SPH, temp1
 	ldi temp1, low(RAMEND)
@@ -93,7 +94,7 @@ RESET:
 	out TCCR0B, temp1
 	ldi temp1, (1<<TOIE0)
 	sts TIMSK0, temp1
-
+	
 	ldi temp1, 254
 	sts OCR3BL, temp1
 	clr temp1
@@ -123,9 +124,11 @@ RESET:
 	ldl minutes, 0
 	ldl seconds, 0
 	ldl pressed, 0
+	ldl pmode, FINISHMODE
 
 ;initialise lcd
 	do_lcd_command 0b00111000 ; 2x5x7
+
 	rcall sleep_5ms
 	do_lcd_command 0b00111000 ; 2x5x7
 	rcall sleep_1ms
@@ -140,14 +143,13 @@ RESET:
 ;test backslash
 	do_lcd_command 0b10000000
 	do_lcd_data_im 0
-
+	ldi temp1, 0b10101010
+	out PORTC, temp1
 	sei
 	jmp main
 
 TIM0OVF:
 	pushall
-	rcall display_turnt
-	rcall display_open
 	cpl mode, RUNNINGMODE ;check if in running mode
 	breq tim0continue
 	jmp tim0end
@@ -164,6 +166,8 @@ tim0continue:
 	jmp mag_and_turn_end
 
 mag_and_turn:
+	rcall display_turnt
+	rcall display_open
 	clr dataL
 	clr dataH
 	lds temp1, magcounter
@@ -309,7 +313,6 @@ TIM3END:
 	reti
 
 main:
-
 ;main loop => check what mode we're in, call function for that mode
 ;mode function returns when it is no longer the mode
 mainloop:
@@ -330,6 +333,7 @@ main_normal_input:
 	ldl open, 1
 	
 main_mode_check:
+	out portc, mode
 	mov temp1, mode
 	cpi temp1, 0	
 	brne main_next1

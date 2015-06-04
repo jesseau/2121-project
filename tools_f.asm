@@ -1,11 +1,13 @@
 sleep_1ms:
-	pushall	
+	push r24
+	push r25
 	ldi r25, high(DELAY_1MS)
 	ldi r24, low(DELAY_1MS)
 delayloop_1ms:
 	sbiw r25:r24, 1
 	brne delayloop_1ms
-	popall
+	pop r25
+	pop r24
 	ret
 
 sleep_5ms:
@@ -156,7 +158,6 @@ keypad_store:
 	rcall reset_fadetimer
 
 keypad_end:
-	inc r4
 	out PORTC, result
 	rcall sleep_5ms
 	ret

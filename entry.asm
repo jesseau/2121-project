@@ -5,8 +5,8 @@ entry_mode:
 	ldl numpressed, 0
 	ldl enterpl, 0
 	ldl power, 4
-	clr minutes
-	clr seconds
+	ldl minutes, 0
+	ldl seconds, 0
 
 skip_initialisation:
 	cpi result, '*'
@@ -48,6 +48,7 @@ normal_entry_mode:
 entry_checkhash:
 	cpi result, '#'
 	brne entry_checkA
+	do_lcd_command 0b00000001
 	ldl pmode, FINISHMODE
 	jmp TheEndOfAll
 

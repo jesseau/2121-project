@@ -24,13 +24,12 @@
 .macro make_backslash
 	do_lcd_command 0b01000000
 	do_lcd_data_im 0b00000000
-	do_lcd_data_im 0b00000001
-	do_lcd_data_im 0b00000011
-	do_lcd_data_im 0b00000110
-	do_lcd_data_im 0b00001100
-	do_lcd_data_im 0b00001100
-	do_lcd_data_im 0b00011000
 	do_lcd_data_im 0b00010000
+	do_lcd_data_im 0b00001000
+	do_lcd_data_im 0b00000100
+	do_lcd_data_im 0b00000010
+	do_lcd_data_im 0b00000001
+	do_lcd_data_im 0b00000000
 	do_lcd_data_im 0b00000000
 .endmacro
 
@@ -66,7 +65,7 @@ endprintnum:
 
 .macro print_time
 	push temp1
-	;set_cursor 0
+	do_lcd_command 0b10000000
 	convert_num minutes
 	ldi temp1, 58 ; colon
 	do_lcd_data temp1
