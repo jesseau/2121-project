@@ -1,6 +1,6 @@
 entry_mode:
 	cpl pmode, ENTRYMODE	
-	breq skip_intialisation
+	breq skip_initialisation
 	do_lcd_command 0b00000001
 	ldl numpressed, 0
 	ldl enterpl, 0
@@ -76,7 +76,7 @@ switch_modes:
 	jmp entry_mode_end		
 	
 digit_input:
-	cpi numpressed, 4
+	cpl numpressed, 4
 	brlt add_digit
 	jmp entry_normal_mode_end
 add_digit:

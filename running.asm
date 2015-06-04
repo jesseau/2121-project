@@ -38,13 +38,13 @@ running_checkStart:
 running_checkC:
 	cpi result, 'C'
 	brne running_checkD
-	ldi temp, 30
-	add seconds, 30	
+	ldi temp1, 30
+	add seconds, temp1
 running_checkD:
 	cpi result, 'D'
 	brne running_seconds_of
-	ldi temp, 30
-	sub seconds, 30	
+	ldi temp1, 30
+	sub seconds, temp1
 
 running_seconds_of:
 	cpl seconds, 61

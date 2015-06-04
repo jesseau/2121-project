@@ -1,6 +1,6 @@
 pause_mode:
 	lds temp1, pausetype
-	cpi pausetype, 1
+	cpi temp1, 1
 	brne pause_button_press
 	cpl open, 0	
 	brne pause_mode_end
