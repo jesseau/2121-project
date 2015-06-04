@@ -27,11 +27,36 @@ running_checkC:
 	brne running_checkD
 	ldi temp1, 30
 	add seconds, temp1
+	cpl seconds, 127
+	brlo check_max_case
+	cpl minutes, 98
+	brlt notcapped
+	ldl minutes, 99
+	ldl seconds, 99
+	jmp check_max_case
+notcapped:
+	inc minutes
+	ldi temp1, 60
+	sub seconds, temp1
 running_checkD:
 	cpi result, 'D'
-	brne running_seconds_of
+	brne check_max_case
 	ldi temp1, 30
 	sub seconds, temp1
+
+check_max_case:
+	cpl minutes, 99
+	brlt running_seconds_of
+	cpl seconds, 100
+	brlt check_careful
+	ldl minutes, 99
+	ldl seconds, 99
+	jmp running_mode_end
+
+check_careful:
+	cpl seconds, 0
+	brlt running_seconds_uf
+	jmp running_minutes_of
 
 running_seconds_of:
 	cpl seconds, 61
@@ -56,6 +81,13 @@ running_minutes_of:
 	cpl minutes, 100
 	brlt running_minutes_uf
 	ldl minutes, 99
+	cpl seconds, 40
+	brlt normal_add
+	ldl seconds, 99
+	jmp running_mode_end
+normal_add:
+	ldi temp1, 60
+	add seconds, temp1
 
 running_minutes_uf:
 	cpl minutes, 0
