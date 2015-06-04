@@ -44,7 +44,7 @@ lcd_wait_loop:
 
 display_turnt:
 	pushall
-	do_lcd_command 0b10011011
+	do_lcd_command 0b10001111
 	cpl ttpos, 0
 	brne display_next1
 	do_lcd_data_im '|'
@@ -68,12 +68,14 @@ display_turnt_end:
 
 display_open:
 	pushall
-	do_lcd_command 0b11000011
+	do_lcd_command 0b11001111
 	cpl open, 1
 	brne display_closed
+	sbi PORTB, 3
 	do_lcd_data_im 'O'
 	jmp display_open_end
 display_closed:
+	cbi PORTB, 3
 	do_lcd_data_im 'C'
 
 display_open_end:

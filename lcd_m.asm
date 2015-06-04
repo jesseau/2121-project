@@ -65,11 +65,24 @@ endprintnum:
 
 .macro print_time
 	push temp1
-	do_lcd_command 0b10000000
+	push temp2
+	clr temp2
+	brbc 7, no_iflag
+	ldi temp2, 1
+no_iflag:
+	cli
+	do_lcd_command 0b00000001
 	convert_num minutes
-	ldi temp1, 58 ; colon
-	do_lcd_data temp1
+	do_lcd_data_im ':'
 	convert_num seconds
+	rcall display_turnt
+	rcall display_open
+
+	cpi temp2, 1
+	brne no_sei
+	sei
+no_sei:
+	pop temp2
 	pop temp1
 .endmacro
 

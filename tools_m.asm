@@ -3,6 +3,7 @@
 		out @0, @1
 	.else
 		sts @0, @1
+	.endif
 .endmacro
 
 .macro pushall

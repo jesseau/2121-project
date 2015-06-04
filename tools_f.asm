@@ -80,13 +80,13 @@ button_detect:
 	jmp get_input
 button1_pressed: ; open
 	rcall reset_fadetimer
-	ldi temp1, BUT1PRESSED
-	out PORTC, temp1
+	ldi result, BUT1PRESSED
+	;out PORTC, temp1
 	ret
 button0_pressed: ; closed
 	rcall reset_fadetimer
-	ldi temp1, BUT0PRESSED
-	out PORTC, temp1
+	ldi result, BUT0PRESSED
+	;out PORTC, temp1
 	ret
 
 keypad_colloop:
@@ -158,7 +158,7 @@ keypad_store:
 	rcall reset_fadetimer
 
 keypad_end:
-	out PORTC, result
+	;out PORTC, result
 	rcall sleep_5ms
 	ret
 
@@ -168,5 +168,24 @@ reset_fadetimer:
 	sts tim3counter, temp1
 	sts tim3counter+1, temp1
 	ldl fadedir, INCREASING
+	pop temp1
+	ret
+
+display_power:
+	push temp1
+	cpl power, 4
+	brne power_check2
+	ldi temp1, 0xFF
+	jmp display_power_end
+power_check2:
+	cpl power, 2
+	brne power_check1
+	ldi temp1, 0x0F
+	jmp display_power_end
+power_check1:
+	ldi temp1, 0x03
+
+display_power_end:
+	out PORTC, temp1
 	pop temp1
 	ret

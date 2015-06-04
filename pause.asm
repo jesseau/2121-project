@@ -15,6 +15,7 @@ pause_button_press:
 switch_to_entry:
 	cpi result, '#'
 	brne pause_mode_end
+	do_lcd_command 0b00000001
 	ldl mode, ENTRYMODE
 
 pause_mode_end:

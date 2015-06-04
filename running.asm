@@ -1,31 +1,18 @@
 running_mode:
-	cpl pmode, ENTRYMODE
-	brne running_continue
-	do_lcd_command 0b00000001
-	cpi dir, 1 
-	brne running_clockwise
-	ldi dir, -1
-	jmp running_reset
-running_clockwise:
-	ldi dir, 1 	
-running_reset:
-	clr temp1
-	sts tim0counter, temp1
-	sts tim0counter+1, temp1	
-	sts turntcounter, temp1
-	sts turntcounter+1, temp1
-
-running_continue:
 	cpi result, '#'
-	brne running_checkopen
+	breq running_printtime
+	jmp running_checkopen
+running_printtime:
 	ldi temp1, 0	
 	sts pausetype, temp1
-	ldl mode, PAUSEMODE	
+	ldl mode, PAUSEMODE
 	jmp running_mode_end
 
 running_checkopen:
 	cpl open, 1
-	brne running_checkStart
+	breq running_printtime2
+	jmp running_checkStart
+running_printtime2:
 	ldi temp1, 1
 	sts pausetype, temp1
 	ldl mode, PAUSEMODE
@@ -77,6 +64,7 @@ running_minutes_uf:
 	ldl seconds, 0	
 
 running_mode_end:
+	print_time	
 	ldl pmode, RUNNINGMODE
 	ret
 	

@@ -10,13 +10,22 @@ entry_mode:
 
 skip_initialisation:
 	cpi result, '*'
-	brne entry_mode_type	
+	brne entry_checkbut1
 	cpl numpressed, 0
 	brne nofix
 	ldl minutes, 1
 nofix:
 	ldl mode, RUNNINGMODE
-	jmp entry_mode_end	
+	jmp entry_mode_to_running
+
+entry_checkbut1:
+	cpi result, BUT1PRESSED
+	brne entry_checkbut0
+	jmp entry_mode_end
+entry_checkbut0:
+	cpi result, BUT0PRESSED
+	brne entry_mode_type
+	jmp entry_mode_end
 
 entry_mode_type:
 	cpl enterpl, 1
@@ -32,6 +41,7 @@ plentry_check2:
 plentry_check1:
 	cpi result, 1	
 	brne plentry_end
+	ldl power, 1
 plentry_end:
 	cpi result, '#'
 	breq exit_time
@@ -58,6 +68,7 @@ entry_checkA:
 	jmp digit_input
 switch_modes:
 	ldl enterpl, 1
+	cli
 	do_lcd_command 0b10000000
 	do_lcd_data_im 'S'
 	do_lcd_data_im 'e'
@@ -74,6 +85,7 @@ switch_modes:
 	do_lcd_data_im '2'
 	do_lcd_data_im '/'
 	do_lcd_data_im '3'
+	sei
 	jmp entry_mode_end		
 	
 digit_input:
@@ -99,4 +111,21 @@ entry_normal_mode_end:
 entry_mode_end:
 	ldl pmode, ENTRYMODE
 TheEndOfAll:
+	ret
+
+entry_mode_to_running:
+	print_time
+	cpi dir, 1 
+	brne running_clockwise
+	ldi dir, -1
+	jmp running_reset
+running_clockwise:
+	ldi dir, 1 	
+running_reset:
+	clr temp1
+	sts tim0counter, temp1
+	sts tim0counter+1, temp1	
+	sts turntcounter, temp1
+	sts turntcounter+1, temp1
+	sts turntable_counter, temp1
 	ret

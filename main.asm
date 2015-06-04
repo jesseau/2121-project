@@ -47,7 +47,8 @@ turntcounter: .byte 2 ;stands for turntable counter
 turntpos: .byte 1 ;turntable position
 magcounter: .byte 1
 pausetype: .byte 1
-
+displaycounter: .byte 2
+turntable_counter: .byte 1
 
 .cseg
 .org 0x00
@@ -73,6 +74,10 @@ RESET:
 	sts DDRL, temp1
 	ldi temp1, ROWMASK
 	sts PORTL, temp1
+
+	ldi temp1, 1<<3
+	stout DDRB, temp1
+	cbi PORTB, 3
 
 	ser temp1 ; initialise LEDs (debug)
 	out DDRC, temp1
@@ -115,11 +120,13 @@ RESET:
 	sts tim3counter, temp1
 	sts tim3counter+1, temp1
 	sts magcounter, temp1
-	sts magcounter, temp1
+	sts displaycounter, temp1
+	sts displaycounter+1, temp1
 
 	ldl fadedir, INCREASING
 
 	ldl ttpos, 0
+	ldl open, 0
 	ldl mode, ENTRYMODE
 	ldl minutes, 0
 	ldl seconds, 0
@@ -137,19 +144,35 @@ RESET:
 	do_lcd_command 0b00001000 ; display off?
 	do_lcd_command 0b00000001 ; clear display
 	do_lcd_command 0b00000110 ; increment, no display shift
-	do_lcd_command 0b00001111 ; Cursor on, bar, no blink
+	do_lcd_command 0b00001100 ; Cursor on, bar, no blink
 	make_backslash
 
 ;test backslash
-	do_lcd_command 0b10000000
-	do_lcd_data_im 0
-	ldi temp1, 0b10101010
-	out PORTC, temp1
+	;do_lcd_command 0b10000000
+	;do_lcd_data_im 0
+	;ldi temp1, 0b10101010
+	;out PORTC, temp1
 	sei
 	jmp main
 
 TIM0OVF:
 	pushall
+	lds dataL, displaycounter
+	lds dataH, displaycounter+1
+	adiw dataH:dataL, 1
+	cpi dataL, LOW(1953)
+	ldi temp1, HIGH(1953)
+	cpc dataH, temp1
+	brne timer_displaycont
+	clr dataL
+	clr dataH
+	rcall display_turnt
+	rcall display_open
+	rcall display_power
+timer_displaycont:
+	sts displaycounter, dataL
+	sts displaycounter+1, dataH
+
 	cpl mode, RUNNINGMODE ;check if in running mode
 	breq tim0continue
 	jmp tim0end
@@ -166,8 +189,6 @@ tim0continue:
 	jmp mag_and_turn_end
 
 mag_and_turn:
-	rcall display_turnt
-	rcall display_open
 	clr dataL
 	clr dataH
 	lds temp1, magcounter
@@ -175,11 +196,15 @@ mag_and_turn:
 	brge motoron
 
 ;motor turns off
+	clr temp1
+	out PORTE, temp1
 	cbi PORTE, 4
 
 	jmp postmotor
 motoron:
 ;motor turns on
+	ser temp1
+	out PORTE, temp1
 	sbi PORTE, 4
 
 postmotor:
@@ -190,15 +215,22 @@ postmotor:
 	sts magcounter, temp1
 
 turntable:
+	lds temp3, turntable_counter
+	inc temp3
+	cpi temp3, 10
+	brlt turntable_end
+	clr temp3
 	add ttpos, dir
 	cpl ttpos, 0 ; check for underflow
 	brge turntable_check_of
 	ldl ttpos, 3
 turntable_check_of:
 	cpl ttpos, 4
-	brlt mag_and_turn_end
+	brlt turntable_end
 	ldl ttpos, 0
 
+turntable_end:
+	sts turntable_counter, temp3
 mag_and_turn_end:
 	sts turntcounter, dataL
 	sts turntcounter+1, dataH	
@@ -246,6 +278,7 @@ change_finish_mode:
 	do_lcd_data_im 'o'
 	do_lcd_data_im 'n'
 	do_lcd_data_im 'e'
+	do_lcd_data_im ' '
 	do_lcd_command 0b11000000 ; set cursor to second line
 	do_lcd_data_im 'R'
 	do_lcd_data_im 'e'
@@ -327,13 +360,13 @@ main_no_input:
 	ldi result, BUT1PRESSED
 	jmp main_mode_check
 main_normal_input:
+	;out portc, result
 	cpi result, BUT1PRESSED
-
 	brne main_mode_check
 	ldl open, 1
 	
 main_mode_check:
-	out portc, mode
+	;out portc, result
 	mov temp1, mode
 	cpi temp1, 0	
 	brne main_next1
