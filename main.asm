@@ -90,7 +90,7 @@ RESET:
 	out PORTF, temp1
 	out PORTA, temp1
 
-	ldi temp1, (1<<PE4)|(1<<PE5) ; initialise motor and BL
+	ldi temp1, (1<<DDE4)|(1<<DDE5) ; initialise motor and BL
 	out DDRE, temp1
 
 	ldi temp1, 0 ; initialise timer0
@@ -175,6 +175,7 @@ timer_displaycont:
 
 	cpl mode, RUNNINGMODE ;check if in running mode
 	breq tim0continue
+	cbi PORTE, 4 ; disable motor
 	jmp tim0end
 
 tim0continue:
@@ -193,25 +194,23 @@ mag_and_turn:
 	clr dataH
 	lds temp1, magcounter
 	cp temp1, power
-	brge motoron
+	brlt motoron
 
 ;motor turns off
-	clr temp1
-	out PORTE, temp1
 	cbi PORTE, 4
-
 	jmp postmotor
 motoron:
 ;motor turns on
-	ser temp1
-	out PORTE, temp1
 	sbi PORTE, 4
 
 postmotor:
+	;do_lcd_command 0b11000000
+	;do_lcd_data_im 'P'
 	inc temp1
 	cpi temp1, 4
-	brlt turntable
-	subi temp1, 4
+	brlt update_mag
+	clr temp1
+update_mag:
 	sts magcounter, temp1
 
 turntable:
