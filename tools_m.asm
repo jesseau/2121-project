@@ -96,12 +96,12 @@ tools_result:
 
 .macro start_beeper
 	push temp1
+	clr temp1
+	sts tim4counter, temp1
 	ser temp1
 	sts OCR4CL, temp1
 	ldi temp1, (1<<OCIE4C)
 	sts TIMSK4, temp1
-	clr temp1
-	sts tim4counter, temp1
 	clr beepcount
 	pop temp1
 .endmacro

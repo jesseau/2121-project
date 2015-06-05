@@ -80,6 +80,7 @@ button_detect:
 	jmp get_input
 button1_pressed: ; open
 	rcall reset_fadetimer
+	ldl pressed, 1
 	ldi iskeypad, 1
 	start_beeper
 	ldi result, BUT1PRESSED
@@ -87,6 +88,7 @@ button1_pressed: ; open
 	ret
 button0_pressed: ; closed
 	rcall reset_fadetimer
+	ldl pressed, 1
 	ldi iskeypad, 1
 	start_beeper
 	ldi result, BUT0PRESSED

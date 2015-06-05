@@ -82,6 +82,8 @@ RESET:
 	ldi temp1, 1<<3
 	stout DDRB, temp1
 	cbi PORTB, 3
+	sbi PORTB, 1
+	sbi PORTB, 0
 
 	ser temp1 ; initialise LEDs (debug)
 	out DDRC, temp1
