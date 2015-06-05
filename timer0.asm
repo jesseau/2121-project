@@ -115,6 +115,7 @@ comp_minutes:
 
 change_finish_mode:
 	ldl mode, FINISHMODE
+	rcall reset_fadetimer
 	start_beeper
 	do_lcd_command 0b10000000
 	do_lcd_data_im 'D'
