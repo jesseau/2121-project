@@ -26,14 +26,14 @@ ignore_beeper:
 	lds temp2, OCR4CL
 	cpi temp2, 0
 	breq beeper_off
-	cpi temp2, 255
+	cpi temp2, 128
 	breq beeper_on
 beeper_on:
 	clr temp2
 	sts OCR4CL, temp2
 	jmp TIM4END
 beeper_off:
-	ser temp2
+	ldi temp2, 128
 	sts OCR4CL, temp2
 	jmp TIM4END
 TIM4CONT:

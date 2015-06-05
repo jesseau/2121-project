@@ -98,7 +98,7 @@ tools_result:
 	push temp1
 	clr temp1
 	sts tim4counter, temp1
-	ser temp1
+	ldi temp1, 128
 	sts OCR4CL, temp1
 	ldi temp1, (1<<OCIE4C)
 	sts TIMSK4, temp1
