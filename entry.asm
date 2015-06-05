@@ -33,15 +33,24 @@ entry_mode_type:
 
 	cpi result, 3	
 	brne plentry_check2
-	ldl power, 4
+	ldl power, 1
+	ldl enterpl, 0
+	do_lcd_command 0b00000001
+	jmp entry_normal_mode_end
 plentry_check2:
 	cpi result, 2
 	brne plentry_check1
 	ldl power, 2
+	ldl enterpl, 0
+	do_lcd_command 0b00000001
+	jmp entry_normal_mode_end
 plentry_check1:
 	cpi result, 1	
 	brne plentry_end
-	ldl power, 1
+	ldl power, 4
+	ldl enterpl, 0
+	do_lcd_command 0b00000001
+	jmp entry_normal_mode_end
 plentry_end:
 	cpi result, '#'
 	breq exit_time
