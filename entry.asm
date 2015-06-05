@@ -29,8 +29,11 @@ entry_checkbut0:
 
 entry_mode_type:
 	cpl enterpl, 1
-	brne normal_entry_mode
-
+	brne _normal_entry_mode
+	jmp entry_mode_type_cont
+_normal_entry_mode:
+	jmp normal_entry_mode
+entry_mode_type_cont:
 	cpi result, 3	
 	brne plentry_check2
 	ldl power, 1
@@ -89,6 +92,7 @@ switch_modes:
 	do_lcd_data_im 'e'
 	do_lcd_data_im 'r'
 	do_lcd_data_im ' '
+	do_lcd_command 0b11000000
 	do_lcd_data_im '1'
 	do_lcd_data_im '/'
 	do_lcd_data_im '2'
