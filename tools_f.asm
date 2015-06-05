@@ -80,11 +80,15 @@ button_detect:
 	jmp get_input
 button1_pressed: ; open
 	rcall reset_fadetimer
+	ldi iskeypad, 1
+	start_beeper
 	ldi result, BUT1PRESSED
 	;out PORTC, temp1
 	ret
 button0_pressed: ; closed
 	rcall reset_fadetimer
+	ldi iskeypad, 1
+	start_beeper
 	ldi result, BUT0PRESSED
 	;out PORTC, temp1
 	ret
@@ -155,10 +159,11 @@ keypad_zero:
 
 keypad_store:
 	mov result, temp1 ; global var for determining what was pressed
+	ldi iskeypad, 1
+	start_beeper
 	rcall reset_fadetimer
 
 keypad_end:
-	;out PORTC, result
 	rcall sleep_5ms
 	ret
 

@@ -20,9 +20,10 @@
 .def temp2 = r17
 .def temp3 = r18
 .def result = r19
-.def dir= r20 ; stands for direction
-
+.def dir = r20 ; stands for direction
 .def fadedir = r21 ; fade direction for backlight (advanced feature)
+.def beepcount = r22
+.def iskeypad = r23
 
 .def dataL = r24
 .def dataH = r25
@@ -43,6 +44,7 @@
 .dseg
 tim0counter: .byte 2
 tim3counter: .byte 2
+tim4counter: .byte 1
 turntcounter: .byte 2 ;stands for turntable counter
 turntpos: .byte 1 ;turntable position
 magcounter: .byte 1
@@ -59,6 +61,8 @@ turntable_counter: .byte 1
 	jmp TIM0OVF
 .org OVF3addr
 	jmp TIM3OVF
+.org OVF4addr
+	jmp TIM4OVF
 
 DEFAULT:
 	reti
@@ -114,17 +118,30 @@ RESET:
 
 	ldi dir, 1
 	
+	ldi temp1, (1<<PH5) ; initialise sound - OCR4C
+	sts DDRH, temp1
+
+	clr temp1
+	sts OCR4CL, temp1
+	sts OCR4CH, temp1
+
+	ldi temp1, (1<<WGM40)|(1<<COM4C1)
+	sts TCCR4A, temp1
+	ldi temp1, (1<<CS42) ; 256 prescaler
+	sts TCCR4B, temp1
+
 	clr temp1
 	sts tim0counter, temp1
 	sts tim0counter+1, temp1
 	sts tim3counter, temp1
 	sts tim3counter+1, temp1
+	sts tim4counter, temp1
 	sts magcounter, temp1
 	sts displaycounter, temp1
 	sts displaycounter+1, temp1
 
+	clr iskeypad
 	ldl fadedir, INCREASING
-
 	ldl ttpos, 0
 	ldl open, 0
 	ldl mode, ENTRYMODE
@@ -272,6 +289,7 @@ comp_minutes:
 
 change_finish_mode:
 	ldl mode, FINISHMODE
+	start_beeper
 	do_lcd_command 0b10000000
 	do_lcd_data_im 'D'
 	do_lcd_data_im 'o'
@@ -321,6 +339,9 @@ fade_increasing:
 	sts OCR3CL, temp1
 
 TIM3CONT:
+	cpl mode, RUNNINGMODE
+	breq running_ignore
+
 	lds dataL, tim3counter
 	lds dataH, tim3counter+1
 	adiw dataH:dataL, 1
@@ -329,8 +350,6 @@ TIM3CONT:
 	cpc dataH, temp1
 	brne TIM3END
 
-	cpl mode, RUNNINGMODE
-	breq running_ignore
 	ldl fadedir, DECREASING
 
 running_ignore:
@@ -341,6 +360,51 @@ running_ignore:
 TIM3END:
 	sts tim3counter, dataL
 	sts tim3counter+1, dataH
+	popall
+	reti
+
+TIM4OVF:
+	pushall
+	lds temp1, tim4counter
+	cpi temp1, 30 ; 250ms counter for keypad press
+	breq stop_keypad_beep
+	cpi temp1, 122 ; 1 second counter for beeper
+	brne TIM4CONT ; it's not a second yet, so count up and do nothing
+	cpi beepcount, 4 ; if we're here at the 4th iteration, then stop the beeping, i.e. only 3 iterations are completed
+	brlt ignore_beeper
+turn_beeper_off:
+	clr beepcount
+	stop_beeper
+	jmp TIM4CONT
+stop_keypad_beep:
+	cpi iskeypad, 1
+	brne TIM4CONT
+	clr iskeypad
+;	cpi temp1, 31 ; if we have a counter higher than 30, then that shouldn't break the existing finished beep
+;	brge TIM4CONT
+	stop_beeper
+	jmp TIM4END
+ignore_beeper:
+	inc beepcount
+	clr temp1 ; reset the 1 second counter
+	sts tim4counter, temp1
+	lds temp2, OCR4CL
+	cpi temp2, 0
+	breq beeper_off
+	cpi temp2, 255
+	breq beeper_on
+beeper_on:
+	clr temp2
+	sts OCR4CL, temp2
+	jmp TIM4END
+beeper_off:
+	ser temp2
+	sts OCR4CL, temp2
+	jmp TIM4END
+TIM4CONT:
+	inc temp1
+	sts tim4counter, temp1
+TIM4END:
 	popall
 	reti
 

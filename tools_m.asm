@@ -11,8 +11,6 @@
 	push r17
 	push r18
 	push r20
-	push r22
-	push r23
 	push r24
 	push r25
 	push r26
@@ -36,8 +34,6 @@
 	pop r26
 	pop r25
 	pop r24
-	pop r23
-	pop r22
 	pop r20
 	pop r18
 	pop r17
@@ -95,6 +91,26 @@ tools_result:
 	push temp1
 	ldi temp1, @0
 	out PORTC, temp1
+	pop temp1
+.endmacro
+
+.macro start_beeper
+	push temp1
+	ser temp1
+	sts OCR4CL, temp1
+	ldi temp1, (1<<OCIE4C)
+	sts TIMSK4, temp1
+	clr temp1
+	sts tim4counter, temp1
+	clr beepcount
+	pop temp1
+.endmacro
+
+.macro stop_beeper
+	push temp1
+	clr temp1
+	sts OCR4CL, temp1
+	sts TIMSK4, temp1
 	pop temp1
 .endmacro
 
